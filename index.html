@@ -1,0 +1,134 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>טיפול בטעויות של קלוד קוד</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;margin:0;background:#f6f5f2;color:#1d1d1f;line-height:1.65}
+main{max-width:820px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:2rem;margin:.2em 0} h2{margin-top:2.4em;border-top:1px solid #ddd;padding-top:1.2em} h3{margin:.2em 0}
+.lead{font-size:1.15rem;color:#444}
+ol.loop li{margin:.5em 0}
+.box{position:relative;margin:.6em 0}
+pre{direction:ltr;text-align:left;background:#1e1e1e;color:#eee;padding:16px;border-radius:8px;overflow:auto;white-space:pre-wrap;font-size:.86rem}
+.rtl pre{direction:rtl;text-align:right}
+button{position:absolute;top:8px;left:8px;background:#e8e3d8;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem}
+.ctl{background:#fff;border-radius:10px;padding:14px 18px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.ok{color:#2f5d3a} details{margin:.5em 0} summary{cursor:pointer;font-family:monospace}
+footer{margin-top:3em;color:#777;font-size:.9rem}
+</style></head><body><main>
+<h1>טיפול בטעויות של קלוד קוד</h1>
+<p class="lead">תיקון בצ'אט לא מספיק. קלוד מסכים באותו רגע, וטעות מאותו סוג חוזרת. זו הערכה שבניתי כדי שכל תיקון יהפוך לבדיקה. היא עובדת בתוך הפרויקט, בלי שרת ובלי חיבורים.</p>
+<h2>איך זה עובד</h2>
+<ol class="loop">
+<li>hook של UserPromptSubmit מזהה בהודעה שלכם תיקון, כמו "טעית" או "כבר אמרתי". הוא רושם את ההודעה, ומזריק לקלוד הנחיה לרשום את הטעות לפני שהוא עונה.</li>
+<li>כל טעות נכנסת ל-MISTAKES.md עם ציטוט, הכלל שנשבר, מוסר השכל ומה שונה בפועל. אם לא שונה כלום, כותבים "טרם יושם".</li>
+<li>פעם בשבוע מודל של חברה אחרת עובר על היומן. הוא מחפש סיבת שורש ומה חוזר, ומציע כלל.</li>
+<li>כלל שאישרתם נכנס ל-LESSONS_ACTIVE.md. hook של SessionStart טוען אותו בתחילת כל סשן.</li>
+<li>פעם בחודש בודקים אם הטעות חזרה אחרי שהכלל נוסף. אם חזרה, הכלל לא עובד, ומחליפים אותו בבדיקה מכנית.</li>
+</ol>
+<h2>התקנה: פרומפט אחד לקלוד קוד</h2>
+<p>פותחים קלוד קוד בתיקיית הפרויקט ומדביקים:</p>
+<div class="rtl"><div class="box"><button onclick="cp('install')">העתקה</button><pre id="install">תתקין לי בפרויקט הזה את ערכת הטיפול בטעויות. לפני כל שינוי בקובץ קיים, תראה לי את השינוי.
+
+1. תוריד את הקבצים האלה, בלי לשנות את התוכן:
+https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/hooks/capture_correction.py אל .claude/hooks/capture_correction.py
+https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/lessons/MISTAKES.md אל .claude/lessons/MISTAKES.md
+https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/lessons/LESSONS_ACTIVE.md אל .claude/lessons/LESSONS_ACTIVE.md
+2. תקרא את https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/settings.json. אם אין לי .claude/settings.json, תשמור אותו כמו שהוא. אם יש, תוסיף את שני ה-hooks (UserPromptSubmit ו-SessionStart) בלי למחוק hooks קיימים.
+3. תוסיף לסוף CLAUDE.md של הפרויקט את הסעיף מ-https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/CLAUDE-section.md. אם אין CLAUDE.md, תיצור אותו.
+4. תריץ את בקרה 1:
+echo &#x27;{&quot;prompt&quot;:&quot;טעית, כבר אמרתי לך&quot;}&#x27; | CLAUDE_PROJECT_DIR=&quot;$PWD&quot; python3 .claude/hooks/capture_correction.py
+ותראה לי את הפלט ואת השורה האחרונה ב-.claude/lessons/candidates.jsonl. אחר כך תמחק את שורת הבדיקה מ-candidates.jsonl.
+5. תגיד לי לפתוח סשן חדש, כי hooks נטענים בתחילת סשן.</pre></div></div>
+<p>אחרי ההתקנה פותחים סשן חדש ועוברים על בקרות 1 עד 4.</p>
+<h2>הבקרות: איך יודעים שזה עובד</h2>
+<p>בלי הבקרות האלה אין לכם דרך לדעת אם המערכת עובדת, או שהיא רק נראית מותקנת.</p>
+<div class="ctl"><h3>1. ה-hook רץ</h3><p>אחרי ההתקנה, בטרמינל בתיקיית הפרויקט:</p><div class="box"><button onclick="cp('c0')">העתקה</button><pre id="c0">echo &#x27;{&quot;prompt&quot;:&quot;טעית, כבר אמרתי לך&quot;}&#x27; | CLAUDE_PROJECT_DIR=&quot;$PWD&quot; python3 .claude/hooks/capture_correction.py</pre></div><p class="ok">צריכה להופיע ההנחיה שמתחילה ב-[טיפול בטעויות], ושורה חדשה ב-.claude/lessons/candidates.jsonl. הודעה בלי ביטוי של תיקון לא מחזירה כלום.</p></div><div class="ctl"><h3>2. קלוד קוד רואה את ה-hooks</h3><p>בסשן חדש של קלוד קוד:</p><div class="box"><button onclick="cp('c1')">העתקה</button><pre id="c1">/hooks</pre></div><p class="ok">צריכים להופיע UserPromptSubmit ו-SessionStart. אם לא, ה-settings.json לא נטען, או שהסשן נפתח לפני ההתקנה.</p></div><div class="ctl"><h3>3. תיקון אמיתי נרשם</h3><p>בסשן, אחרי טעות אמיתית, תכתבו תיקון עם אחד הביטויים. אחר כך:</p><div class="box"><button onclick="cp('c2')">העתקה</button><pre id="c2">git diff .claude/lessons/MISTAKES.md</pre></div><p class="ok">צריכה להיות רשומה חדשה, עם ציטוט, מוסר השכל ופתרון. אם יש שורה ב-candidates.jsonl ואין רשומה, קלוד קיבל את ההנחיה ולא ביצע. אז תכתבו לו את זה, וזו עוד רשומה.</p></div><div class="ctl"><h3>4. הלקחים נטענים</h3><p>אחרי שיש לפחות כלל אחד ב-LESSONS_ACTIVE.md, בסשן חדש תשאלו:</p><div class="box"><button onclick="cp('c3')">העתקה</button><pre id="c3">מה הלקחים הפעילים שקיבלת בתחילת הסשן ?</pre></div><p class="ok">הוא צריך לצטט אותם מילה במילה. אם הוא מסכם או ממציא, ה-SessionStart לא עבד.</p></div><div class="ctl"><h3>5. ה-hook לא מפספס</h3><p>פעם בשבוע, תספרו:</p><div class="box"><button onclick="cp('c4')">העתקה</button><pre id="c4">wc -l .claude/lessons/candidates.jsonl</pre></div><p class="ok">תשוו למספר התיקונים שאתם זוכרים מהשבוע. תיקון שלא נתפס אומר שחסר ביטוי ב-MARKERS בתוך ה-hook. תוסיפו את המילים שאתם באמת כותבים.</p></div><div class="ctl"><h3>6. הכלל באמת עובד</h3><p>פעם בחודש, הפרומפט החודשי למטה.</p><p class="ok">כלל שאחריו הטעות חזרה לא עובד. אותו מחליפים בבדיקה מכנית, hook או סקריפט, ולא בכלל ארוך יותר.</p></div>
+<h2>הבודק השבועי</h2>
+<p>פותחים צ'אט חדש ב-ChatGPT או ב-Gemini, מצרפים את MISTAKES.md ומדביקים:</p>
+<div class="rtl"><div class="box"><button onclick="cp('review')">העתקה</button><pre id="review">אתה בודק. לא כתבת את הרשומות האלה, ואין לך את ההסברים של מי שכתב אותן.
+לכל רשומה מהשבוע האחרון:
+1. סיבת השורש במשפט אחד, עם ציטוט מהרשומה.
+2. האם היא חוזרת על רשומה קודמת, ועל איזו.
+3. האם &quot;הפתרון שיושם&quot; באמת מונע את הטעות, או רק מבטיח להיזהר.
+4. בדיקה אחת שאפשר להוסיף: hook, סקריפט, או בדיקה של קורא לפני שהתוצר יוצא.
+בסוף: הדפוסים שחזרו לפחות 3 פעמים, ולכל אחד כלל קצר ל-LESSONS_ACTIVE.md.
+אל תבנה דפוס משורה אחת.</pre></div></div>
+<h2>הבדיקה החודשית</h2>
+<p>גם היא בצ'אט של מודל אחר, עם שני הקבצים:</p>
+<div class="rtl"><div class="box"><button onclick="cp('monthly')">העתקה</button><pre id="monthly">מצורפים MISTAKES.md ו-LESSONS_ACTIVE.md.
+לכל כלל ב-LESSONS_ACTIVE.md:
+1. מתי הוא נוסף.
+2. האם אחרי התאריך הזה יש ב-MISTAKES.md רשומה מאותו סוג. אם יש, תצטט אותה.
+3. אם הטעות חזרה: איזו בדיקה מכנית (hook או סקריפט) הייתה תופסת אותה, במקום כלל כתוב.
+אל תניח שכלל עובד רק מפני שהוא כתוב.</pre></div></div>
+<h2>הקבצים, להתקנה ידנית</h2>
+<p>אותם קבצים שהפרומפט מוריד. אפשר גם <a href="https://github.com/guycoful/claude-mistakes-kit/tree/main/kit">בריפו</a>.</p>
+<details><summary>.claude/hooks/capture_correction.py</summary><div class="box"><button onclick="cp('fhook')">העתקה</button><pre id="fhook">#!/usr/bin/env python3
+# UserPromptSubmit hook: מזהה תיקון בהודעה שלך, רושם אותו, ומזריק לקלוד את הלקחים הפעילים לפני שהוא עונה.
+import sys, json, re, os, datetime
+
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+text = (data.get(&quot;prompt&quot;) or &quot;&quot;)[:1500]
+if not text:
+    sys.exit(0)
+
+# ביטויים שאתה משתמש בהם כשאתה מתקן. כדאי להתאים לשפה שלך.
+MARKERS = [r&quot;טעית&quot;, r&quot;לא נכון&quot;, r&quot;אתה אמור&quot;, r&quot;כבר אמרתי&quot;, r&quot;ביקשתי&quot;, r&quot;לא בדקת&quot;, r&quot;שוב &quot;,
+           r&quot;\bwrong\b&quot;, r&quot;you should have&quot;, r&quot;I already told you&quot;]
+hits = [m for m in MARKERS if re.search(m, text, flags=re.I)]
+if not hits:
+    sys.exit(0)
+
+base = os.path.join(os.environ.get(&quot;CLAUDE_PROJECT_DIR&quot;) or data.get(&quot;cwd&quot;) or os.getcwd(), &quot;.claude&quot;, &quot;lessons&quot;)
+os.makedirs(base, exist_ok=True)
+with open(os.path.join(base, &quot;candidates.jsonl&quot;), &quot;a&quot;, encoding=&quot;utf8&quot;) as f:
+    f.write(json.dumps({&quot;ts&quot;: datetime.datetime.now().isoformat(timespec=&quot;seconds&quot;),
+                        &quot;markers&quot;: hits, &quot;text&quot;: text[:600]}, ensure_ascii=False) + &quot;\n&quot;)
+
+print(&quot;[טיפול בטעויות] בהודעה הזו יש תיקון. לפני שאתה עונה:&quot;)
+print(&quot;1. תכתוב איזה כלל נשבר.&quot;)
+print(&quot;2. תבדוק ב-.claude/lessons/MISTAKES.md אם טעות כזו כבר הופיעה.&quot;)
+print(&quot;3. תוסיף רשומה לפי הפורמט שבקובץ, עם מוסר השכל ומה שונה בפועל.&quot;)
+print(&quot;4. אם לדעתך לא טעית, תכתוב למה, עם ציטוט. אל תסכים רק כדי לרצות.&quot;)
+rules = os.path.join(base, &quot;LESSONS_ACTIVE.md&quot;)
+if os.path.exists(rules):
+    print(open(rules, encoding=&quot;utf8&quot;).read())
+</pre></div></details><details><summary>.claude/settings.json</summary><div class="box"><button onclick="cp('fsettings')">העתקה</button><pre id="fsettings">{
+  &quot;hooks&quot;: {
+    &quot;UserPromptSubmit&quot;: [
+      {
+        &quot;hooks&quot;: [
+          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;python3 \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/capture_correction.py&quot; }
+        ]
+      }
+    ],
+    &quot;SessionStart&quot;: [
+      {
+        &quot;hooks&quot;: [
+          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;cat \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/lessons/LESSONS_ACTIVE.md 2&gt;/dev/null || true&quot; }
+        ]
+      }
+    ]
+  }
+}
+</pre></div></details><details><summary>.claude/lessons/MISTAKES.md</summary><div class="box"><button onclick="cp('fmist')">העתקה</button><pre id="fmist"># יומן טעויות
+
+## פורמט
+תאריך | מה קרה, עם ציטוט | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, עם תאריך קודם, או לא)
+מוסר השכל: המשפט הכללי, כך שיחול גם על מקרים אחרים.
+הפתרון שיושם: מה שונה בפועל (כלל ב-LESSONS_ACTIVE.md, hook או סקריפט), עם נתיב. אם לא שונה כלום: &quot;טרם יושם&quot;, ומה מוצע.
+
+## רשומות
+</pre></div></details><details><summary>CLAUDE-section.md</summary><div class="box"><button onclick="cp('fcmd')">העתקה</button><pre id="fcmd">## טעויות
+- כשאני מתקן אותך, תוסיף רשומה ל-.claude/lessons/MISTAKES.md לפי הפורמט, באותו רגע ולא בסוף הסשן.
+- רשומה בלי &quot;מוסר השכל&quot; ובלי &quot;הפתרון שיושם&quot; לא גמורה.
+- לפני שאתה כותב רשומה, תחפש ב-MISTAKES.md טעות דומה. אם יש, תסמן &quot;חוזרת&quot; עם התאריך הקודם.
+- טעות שחוזרת פעם שנייה: תציע כלל קצר ל-LESSONS_ACTIVE.md, ותחכה לאישור שלי לפני שאתה מוסיף אותו.
+- אל תסכים איתי רק כדי לרצות. אם לדעתך לא טעית, תכתוב למה, עם ציטוט.
+</pre></div></details>
+<h2>מה הערכה לא עושה</h2>
+<p>ה-hook מזהה רק את הביטויים שברשימה. תיקון שכתוב אחרת לא נתפס, ולכן קיימת בקרה 5. כלל כתוב לא מבטיח כלום, ולכן קיימת בקרה 6. וגם היומן לא כותב את עצמו. אם קלוד מקבל את ההנחיה ולא רושם, בקרה 3 תראה את זה.</p>
+<footer>גיא כהן, <a href="https://github.com/guycoful/claude-mistakes-kit">guycoful/claude-mistakes-kit</a></footer>
+</main><script>function cp(i){navigator.clipboard.writeText(document.getElementById(i).innerText);}</script></body></html>
