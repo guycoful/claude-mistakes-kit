@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/capture_correction.py" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cat \"$CLAUDE_PROJECT_DIR\"/.claude/lessons/LESSONS_ACTIVE.md 2>/dev/null || true" }
+        ]
+      }
+    ]
+  }
+}

@@ -10,3 +10,14 @@
 - .claude/lessons/MISTAKES.md: תבנית היומן
 - .claude/lessons/LESSONS_ACTIVE.md: הלקחים שנטענים בתחילת סשן
 - CLAUDE-section.md: הסעיף להוספה ל-CLAUDE.md
+
+## הסקיל הנלווה
+בתיקייה skill/claude-mistakes-kit/ יש סקיל ל-Claude Code. הוא מתקין את הערכה בפקודה אחת, רושם טעויות בפורמט קבוע, ומציג מצב יומן. הוא גם מכין קובץ לבדיקה שבועית וחודשית במודל אחר, ומחייב ראיה לפני "בוצע".
+
+התקנה:
+```bash
+git clone https://github.com/guycoful/claude-mistakes-kit.git /tmp/mk
+cp -r /tmp/mk/skill/claude-mistakes-kit ~/.claude/skills/
+python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py "$PWD"
+```
+אחרי ההתקנה פותחים סשן חדש ומריצים /hooks.
