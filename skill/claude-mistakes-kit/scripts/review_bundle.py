@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """review_bundle.py weekly|monthly [PROJECT_DIR] : מייצר קובץ אחד עם הפרומפט והקבצים, להדבקה בצ'אט של מודל אחר."""
-import os, sys
+import datetime, os, sys
 kind = sys.argv[1] if len(sys.argv) > 1 else 'weekly'
 P = os.path.abspath(sys.argv[2] if len(sys.argv) > 2 else os.getcwd())
 L = os.path.join(P, '.claude', 'lessons')
@@ -21,6 +21,7 @@ MONTHLY = """מצורפים MISTAKES.md ו-LESSONS_ACTIVE.md.
 parts = [WEEKLY if kind == 'weekly' else MONTHLY]
 for f in ['MISTAKES.md'] + (['LESSONS_ACTIVE.md'] if kind == 'monthly' else []):
     parts.append(f'===== {f} =====\n' + open(os.path.join(L, f), encoding='utf-8').read())
-out = os.path.join(L, f'review-{kind}.txt')
-open(out, 'w', encoding='utf-8').write('\n\n'.join(parts))
+out = os.path.join(L, f'review-{kind}-{datetime.datetime.now():%Y%m%d-%H%M%S}.txt')
+if os.path.exists(out): sys.exit('הקובץ כבר קיים: ' + out)
+open(out, 'x', encoding='utf-8').write('\n\n'.join(parts))
 print(out)

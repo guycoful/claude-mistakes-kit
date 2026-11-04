@@ -6,9 +6,10 @@ L = os.path.join(P, '.claude', 'lessons')
 m = open(os.path.join(L, 'MISTAKES.md'), encoding='utf-8').read()
 body = m.split('## רשומות', 1)[1] if '## רשומות' in m else ''
 entries = [b.strip() for b in re.split(r'\n(?=\d{1,2}[./]\d{1,2}[./]\d{2,4}\s*\|)', '\n' + body) if b.strip()]
-rec = [e for e in entries if re.search(r'\|\s*כן', e.split('\n')[0])]
+def last_col(e): return e.split('\n')[0].split('|')[-1].strip().strip('"״“”').strip()
+rec = [e for e in entries if last_col(e).startswith('כן')]
 bad = [e.split('\n')[0][:80] for e in entries if 'מוסר השכל:' not in e or 'הפתרון שיושם:' not in e]
-pending = [e.split('\n')[0][:80] for e in entries if re.search(r'הפתרון שיושם:\s*טרם יושם', e)]
+pending = [e.split('\n')[0][:80] for e in entries if re.search(r'הפתרון שיושם:\s*["״“”]?\s*טרם יושם', e)]
 cf = os.path.join(L, 'candidates.jsonl')
 cand = sum(1 for _ in open(cf, encoding='utf-8')) if os.path.exists(cf) else 0
 rules = [l for l in open(os.path.join(L, 'LESSONS_ACTIVE.md'), encoding='utf-8').read().splitlines() if l.strip().startswith(('-', '*')) or re.match(r'\d+\.', l.strip())]

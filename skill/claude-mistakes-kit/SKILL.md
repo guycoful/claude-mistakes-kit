@@ -13,11 +13,11 @@ description: Turn every correction into a check. Installs a mistakes log, a corr
 python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py "$PWD"
 ```
 מה הסקריפט עושה:
-- מעתיק את ה-hook ל-`.claude/hooks/capture_correction.py`.
+- מעתיק את ה-hook ל-`.claude/hooks/capture_correction.py`. אם כבר קיים hook שונה, לא מחליף אותו: מציג diff ושומר את הקיים. החלפה רק עם `--force`, ואז הקיים נשמר כ-`.bak-mistakes-kit`.
 - יוצר את `.claude/lessons/MISTAKES.md` ואת `LESSONS_ACTIVE.md`. אם הם כבר קיימים, לא נוגע בהם.
 - ממזג 2 hooks ל-`.claude/settings.json`, ‏UserPromptSubmit ו-SessionStart, בלי למחוק hooks קיימים. לפני המיזוג נשמר גיבוי `.bak-mistakes-kit`.
 - מוסיף ל-CLAUDE.md סעיף "טעויות" פעם אחת.
-- מריץ את בקרה 1: הודעה עם תיקון צריכה להחזיר הנחיה, והודעה בלי תיקון לא מחזירה כלום. אחר כך מנקה את שורת הבדיקה.
+- מריץ את בקרה 1 בתיקייה זמנית, כדי לא לגעת ב-`candidates.jsonl` של הפרויקט: הודעה עם תיקון צריכה להחזיר הנחיה, והודעה בלי תיקון לא מחזירה כלום.
 
 לפני ההרצה, מראים למשתמש מה ישתנה ומחכים לאישור. אחריה אומרים לו לפתוח סשן חדש ולהריץ `/hooks` (בקרה 2), כי hooks נטענים רק בתחילת סשן.
 
@@ -58,7 +58,7 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/status.py "$PWD"
 python3 ~/.claude/skills/claude-mistakes-kit/scripts/review_bundle.py weekly "$PWD"
 python3 ~/.claude/skills/claude-mistakes-kit/scripts/review_bundle.py monthly "$PWD"
 ```
-כל פקודה מייצרת קובץ אחד ב-`.claude/lessons/`, עם הפרומפט והקבצים. המשתמש מדביק אותו בצ'אט חדש של מודל מחברה אחרת, כמו ChatGPT או Gemini. בודק שלא כתב את הרשומות רואה מה שהכותב מפספס.
+כל פקודה מייצרת קובץ חדש ב-`.claude/lessons/`, עם תאריך ושעה בשם, ולא דורסת קובץ קודם. המשתמש מדביק אותו בצ'אט חדש של מודל מחברה אחרת, כמו ChatGPT או Gemini. בודק שלא כתב את הרשומות רואה מה שהכותב מפספס.
 - שבועי: סיבת שורש לכל רשומה, חזרות, האם הפתרון באמת מונע, ובדיקה מכנית אחת להוסיף.
 - חודשי: לכל כלל, האם הטעות חזרה אחרי שהוא נוסף.
 את מה שהבודק מציע מביאים למשתמש לאישור. לא מוסיפים כלל לבד.
