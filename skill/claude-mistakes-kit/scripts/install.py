@@ -2,6 +2,7 @@
 """install.py [PROJECT_DIR]
 מתקין את ערכת הטיפול בטעויות בפרויקט: hook, יומן, לקחים, hooks ב-settings.json וסעיף ב-CLAUDE.md.
 לא מוחק ולא דורס: קובץ יומן או לקחים קיים נשאר, hooks קיימים נשמרים, והסעיף ב-CLAUDE.md נוסף פעם אחת.
+שדרוג מגרסה קודמת (.claude/lessons): ה-hook הקודם של הערכה מוחלף אחרי גיבוי, היומן מועתק ל-lessons/, ה-SessionStart וההרשאות הקודמים מוסרים לפי פקודה מדויקת, והסעיף ב-CLAUDE.md מתעדכן.
 אם כבר יש capture_correction.py שונה, ה-hook של הערכה מותקן בשם נפרד (mistakes_kit_capture.py), וה-hook שלך לא מורץ.
 גיבוי של settings.json נוצר רק כשההגדרות משתנות, עם תאריך ושעה בשם, ולא דורס גיבוי קודם.
 בסוף מריץ את בקרה 1 בתיקייה זמנית, על ה-hook של הערכה בלבד."""
@@ -29,6 +30,11 @@ def copy(rel, dst_rel=None):
 # ה-hook: לא נוגעים בקובץ שאינו של הערכה ולא מריצים אותו. בוחרים את השם הראשון שפנוי או שכבר מכיל בדיוק את ה-hook של הערכה.
 HOOK_SRC = open(os.path.join(A, '.claude', 'hooks', 'capture_correction.py'), encoding='utf-8').read()
 def same(path): return os.path.exists(path) and open(path, encoding='utf-8').read() == HOOK_SRC
+def old_kit(path):
+    # גרסה קודמת של ה-hook של הערכה: אותה הנחיה, והיומן תחת .claude/lessons
+    if not os.path.exists(path): return False
+    t = open(path, encoding='utf-8', errors='replace').read()
+    return '[טיפול בטעויות] בהודעה הזו יש תיקון' in t and '".claude", "lessons"' in t
 names = ['capture_correction.py', 'mistakes_kit_capture.py'] + [f'mistakes_kit_capture_{i}.py' for i in range(2, 20)]
 main = os.path.join(P, '.claude', 'hooks', names[0])
 if FORCE and os.path.exists(main) and not same(main):
@@ -38,6 +44,9 @@ HOOK_REL = None
 for nm in names:
     path = os.path.join(P, '.claude', 'hooks', nm)
     if same(path): HOOK_REL = f'.claude/hooks/{nm}'; done.append(f'זהה, לא נגעתי: {HOOK_REL}'); break
+    if old_kit(path):
+        b = backup(path); open(path, 'w', encoding='utf-8').write(HOOK_SRC); HOOK_REL = f'.claude/hooks/{nm}'
+        done.append(f'שודרג: {HOOK_REL} היה גרסה קודמת של הערכה. הגרסה הקודמת נשמרה כ-{os.path.basename(b)}'); break
     if not os.path.exists(path):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         open(path, 'x', encoding='utf-8').write(HOOK_SRC); HOOK_REL = f'.claude/hooks/{nm}'; done.append(f'הועתק: {HOOK_REL}'); break
@@ -45,9 +54,14 @@ for nm in names:
 if not HOOK_REL: print('\n'.join(done)); print('לא נמצא שם פנוי ל-hook. ההתקנה נעצרה בלי לשנות את settings.json.'); sys.exit(1)
 if HOOK_REL != '.claude/hooks/capture_correction.py':
     done.append(f'ה-hook של הערכה הותקן בשם {os.path.basename(HOOK_REL)}, ו-settings.json יפנה אליו.')
-old = os.path.join(P, '.claude', 'lessons')
-if os.path.isdir(old):
-    done.append('נמצאה תיקייה ישנה .claude/lessons. הערכה עברה ל-lessons/ בשורש הפרויקט, כי קלוד קוד חוסם כתיבה תחת .claude/. לא העברתי אותה. תעבירו את הרשומות שלכם ל-lessons/ בעצמכם.')
+# שדרוג: היומן עבר מ-.claude/lessons ל-lessons/, כי קלוד קוד חוסם כתיבה תחת .claude/. מעתיקים, לא מעבירים ולא מוחקים.
+OLD_DIR = os.path.join(P, '.claude', 'lessons')
+if os.path.isdir(OLD_DIR):
+    for f in ['MISTAKES.md', 'LESSONS_ACTIVE.md', 'candidates.jsonl']:
+        src, dst = os.path.join(OLD_DIR, f), os.path.join(P, 'lessons', f)
+        if os.path.exists(src) and not os.path.exists(dst):
+            os.makedirs(os.path.dirname(dst), exist_ok=True); shutil.copy(src, dst); done.append(f'הועתק מהגרסה הקודמת: .claude/lessons/{f} אל lessons/{f}')
+    done.append('התיקייה .claude/lessons נשארה במקומה. אחרי שבדקתם ש-lessons/ מלא, אפשר למחוק אותה.')
 copy('lessons/MISTAKES.md')
 copy('lessons/LESSONS_ACTIVE.md')
 # בקרה 5 צריכה קובץ מועמדים. נוצר ריק רק אם אין, בלי דריסה
@@ -59,6 +73,20 @@ new = json.load(open(os.path.join(A, '.claude', 'settings.json'), encoding='utf-
 cur = json.load(open(sp, encoding='utf-8')) if os.path.exists(sp) else {}
 before = json.dumps(cur, sort_keys=True)
 hooks = cur.setdefault('hooks', {})
+# שדרוג: מסירים רק את ההגדרות של הגרסה הקודמת של הערכה, לפי פקודה מדויקת
+OLD_CMDS = {'cat "$CLAUDE_PROJECT_DIR"/.claude/lessons/LESSONS_ACTIVE.md 2>/dev/null || true'}
+for event in list(hooks):
+    groups = []
+    for grp in hooks[event]:
+        hs = [h for h in grp.get('hooks', []) if h.get('command') not in OLD_CMDS]
+        if len(hs) != len(grp.get('hooks', [])): done.append(f'הוסר hook של הגרסה הקודמת: {event}')
+        if hs: groups.append(dict(grp, hooks=hs))
+    hooks[event] = groups
+OLD_RULES = {'Edit(.claude/lessons/MISTAKES.md)', 'Edit(**/.claude/lessons/MISTAKES.md)'}
+if any(r in OLD_RULES for r in cur.get('permissions', {}).get('allow', [])):
+    cur['permissions']['allow'] = [r for r in cur['permissions']['allow'] if r not in OLD_RULES]; done.append('הוסרו הרשאות Edit של הגרסה הקודמת')
+    if not cur['permissions']['allow']: del cur['permissions']['allow']
+    if not cur['permissions']: del cur['permissions']
 for event, groups in new['hooks'].items():
     have = {h.get('command') for grp in hooks.get(event, []) for h in grp.get('hooks', [])}
     for g in groups:
@@ -66,9 +94,6 @@ for event, groups in new['hooks'].items():
         cmd = g['hooks'][0]['command']
         if cmd in have: done.append(f'hook קיים: {event}'); continue
         hooks.setdefault(event, []).append(g); done.append(f'נוסף hook: {event}')
-allow = cur.setdefault('permissions', {}).setdefault('allow', [])
-for rule in new.get('permissions', {}).get('allow', []):
-    if rule not in allow: allow.append(rule); done.append(f'נוספה הרשאה: {rule}')
 if json.dumps(cur, sort_keys=True) != before:
     if os.path.exists(sp): done.append(f'גיבוי של settings.json: {os.path.basename(backup(sp))}')
     os.makedirs(os.path.dirname(sp), exist_ok=True)
@@ -77,7 +102,10 @@ else: done.append('settings.json לא השתנה, ולא נוצר גיבוי')
 # CLAUDE.md
 cp = os.path.join(P, 'CLAUDE.md'); sec = open(os.path.join(A, 'CLAUDE-section.md'), encoding='utf-8').read().strip()
 old = open(cp, encoding='utf-8').read() if os.path.exists(cp) else ''
-if sec.splitlines()[1] in old: done.append('הסעיף כבר קיים ב-CLAUDE.md')
+old_sec = sec.replace('lessons/MISTAKES.md', '.claude/lessons/MISTAKES.md')
+if old_sec in old:
+    backup(cp); open(cp, 'w', encoding='utf-8').write(old.replace(old_sec, sec, 1)); done.append('הסעיף ב-CLAUDE.md עודכן מהגרסה הקודמת (גיבוי נשמר)')
+elif sec in old: done.append('הסעיף כבר קיים ב-CLAUDE.md')
 else:
     open(cp, 'a', encoding='utf-8').write(('\n\n' if old.strip() else '') + sec + '\n'); done.append('נוסף סעיף ל-CLAUDE.md')
 # בקרה 1: רצה בתיקיית זמנית, כדי לא לגעת ב-candidates.jsonl האמיתי
@@ -90,11 +118,14 @@ r1 = subprocess.run([sys.executable, hook], input='{"prompt":"טעית, כבר �
 r0 = subprocess.run([sys.executable, hook], input='{"prompt":"תודה, זה מעולה"}', capture_output=True, text=True, env=env)
 cand = os.path.join(tmp, 'lessons', 'candidates.jsonl')
 n = len(open(cand, encoding='utf-8').read().splitlines()) if os.path.exists(cand) else 0
-ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1
+s1 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output=True, text=True, env=env)
+open(os.path.join(tmp, 'lessons', 'MISTAKES.md'), 'w', encoding='utf-8').write('## רשומות\n- בדיקה\nמוסר השכל: בדיקה\nהפתרון שיושם: בדיקה\n')
+s2 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output=True, text=True, env=env)
+ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1 and '"block"' in s1.stdout and s2.stdout == ''
 shutil.rmtree(tmp, ignore_errors=True)
 print('\n'.join(done))
 print('בקרה 1:', 'עברה' if ok else 'נכשלה')
 if not ok:
     print('ה-hook של הערכה לא הגיב כמצופה. פלט:')
-    print((r1.stdout + r1.stderr + r0.stdout + r0.stderr).strip() or '(ריק)'); sys.exit(1)
+    print((r1.stdout + r1.stderr + r0.stdout + r0.stderr + s1.stdout + s1.stderr + s2.stdout + s2.stderr).strip() or '(ריק)'); sys.exit(1)
 print('עכשיו לפתוח סשן חדש של Claude Code ולהריץ /hooks (בקרה 2).')

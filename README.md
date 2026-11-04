@@ -5,7 +5,7 @@
 הדף עם כל הפרומפטים והבקרות: https://guycoful.github.io/claude-mistakes-kit/
 
 הקבצים בתיקייה kit/:
-- .claude/hooks/capture_correction.py: hook של UserPromptSubmit שמזהה תיקון ורושם אותו. עם --stop הוא רץ כ-hook של Stop, ועוצר את סיום התשובה פעם אחת אם נרשם תיקון ו-MISTAKES.md לא השתנה
+- .claude/hooks/capture_correction.py: hook של UserPromptSubmit שמזהה תיקון ורושם אותו. עם --stop הוא רץ כ-hook של Stop, ועוצר את סיום התשובה פעם אחת אם בסשן נרשמו תיקונים ולא נוספו ל-MISTAKES.md רשומות חדשות במספר הזה
 - .claude/settings.json: רישום ה-hooks (UserPromptSubmit, Stop ו-SessionStart)
 - lessons/MISTAKES.md: תבנית היומן
 - lessons/LESSONS_ACTIVE.md: הלקחים שנטענים בתחילת סשן
