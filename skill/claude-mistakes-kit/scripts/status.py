@@ -16,7 +16,7 @@ rules = [l for l in open(os.path.join(L, 'LESSONS_ACTIVE.md'), encoding='utf-8')
 print(f'רשומות ביומן: {len(entries)}')
 print(f'מסומנות חוזרות: {len(rec)}')
 print(f'כללים פעילים: {len(rules)}')
-print(f'תיקונים שה-hook תפס: {cand}')
-if cand > len(entries): print(f'  פער: {cand - len(entries)} תיקונים נתפסו ואין להם רשומה. לבדוק את candidates.jsonl.')
+print(f'שורות ב-candidates.jsonl (מועמדים לתיקון): {cand}')
+if cand > len(entries): print(f'  יש {cand - len(entries)} מועמדים יותר מרשומות. זה סימן לבדיקה ולא מסקנה: כמה שורות יכולות להיות אותו תיקון, וביטוי יכול להופיע גם בהודעה שאינה תיקון. תעברו על candidates.jsonl.')
 if bad: print('רשומות לא גמורות (חסר מוסר השכל או הפתרון שיושם):'); [print('  ' + b) for b in bad]
 if pending: print('"טרם יושם", כלומר עוד אין מנגנון:'); [print('  ' + b) for b in pending]

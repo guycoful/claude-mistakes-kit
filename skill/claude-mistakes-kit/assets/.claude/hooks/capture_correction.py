@@ -13,15 +13,20 @@ if not text:
 # ביטויים שאתה משתמש בהם כשאתה מתקן. כדאי להתאים לשפה שלך.
 MARKERS = [r"טעית", r"לא נכון", r"אתה אמור", r"כבר אמרתי", r"ביקשתי", r"לא בדקת", r"שוב ",
            r"\bwrong\b", r"you should have", r"I already told you"]
-hits = [m for m in MARKERS if re.search(m, text, flags=re.I)]
-if not hits:
+found = [(m, re.search(m, text, flags=re.I)) for m in MARKERS]
+found = [(m, x) for m, x in found if x]
+if not found:
     sys.exit(0)
+hits = [m for m, x in found]
+# שומרים את תחילת ההודעה וגם קטע סביב הביטוי הראשון, כדי שתיקון בסוף הודעה ארוכה לא יאבד
+pos = min(x.start() for m, x in found)
+context = text[max(0, pos - 200):pos + 200]
 
 base = os.path.join(os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd(), ".claude", "lessons")
 os.makedirs(base, exist_ok=True)
 with open(os.path.join(base, "candidates.jsonl"), "a", encoding="utf8") as f:
     f.write(json.dumps({"ts": datetime.datetime.now().isoformat(timespec="seconds"),
-                        "markers": hits, "text": text[:600]}, ensure_ascii=False) + "\n")
+                        "markers": hits, "text": text[:300], "context": context}, ensure_ascii=False) + "\n")
 
 print("[טיפול בטעויות] בהודעה הזו יש תיקון. לפני שאתה עונה:")
 print("1. תכתוב איזה כלל נשבר.")
