@@ -26,21 +26,25 @@ def copy(rel, dst_rel=None):
             done.append(f'זהה, לא נגעתי: {dst_rel or rel}'); return
         done.append(f'קיים, לא נגעתי: {dst_rel or rel}'); return
     shutil.copy(src, dst); done.append(f'הועתק: {dst_rel or rel}')
-# ה-hook: אם יש כבר capture_correction.py שונה, לא נוגעים בו ולא מריצים אותו. הערכה מותקנת בשם נפרד.
-HOOK_REL = '.claude/hooks/capture_correction.py'
-hsrc, hdst = os.path.join(A, HOOK_REL), os.path.join(P, HOOK_REL)
-if os.path.exists(hdst) and open(hsrc, encoding='utf-8').read() != open(hdst, encoding='utf-8').read():
-    if FORCE:
-        done.append(f'--force: ה-hook הקיים נשמר כ-{os.path.basename(backup(hdst))}')
-        shutil.copy(hsrc, hdst); done.append(f'הוחלף: {HOOK_REL}')
-    else:
-        diff = ''.join(list(difflib.unified_diff(open(hdst, encoding='utf-8').read().splitlines(True), open(hsrc, encoding='utf-8').read().splitlines(True), 'שלך', 'של הערכה'))[:40])
-        HOOK_REL = '.claude/hooks/mistakes_kit_capture.py'
-        done.append('יש לך capture_correction.py שונה. לא נגעתי בו ולא הרצתי אותו. ה-hook של הערכה הותקן בשם mistakes_kit_capture.py. ההבדלים:')
-        done.append(diff)
-        copy('.claude/hooks/capture_correction.py', HOOK_REL)
-else:
-    copy(HOOK_REL)
+# ה-hook: לא נוגעים בקובץ שאינו של הערכה ולא מריצים אותו. בוחרים את השם הראשון שפנוי או שכבר מכיל בדיוק את ה-hook של הערכה.
+HOOK_SRC = open(os.path.join(A, '.claude', 'hooks', 'capture_correction.py'), encoding='utf-8').read()
+def same(path): return os.path.exists(path) and open(path, encoding='utf-8').read() == HOOK_SRC
+names = ['capture_correction.py', 'mistakes_kit_capture.py'] + [f'mistakes_kit_capture_{i}.py' for i in range(2, 20)]
+main = os.path.join(P, '.claude', 'hooks', names[0])
+if FORCE and os.path.exists(main) and not same(main):
+    done.append(f'--force: ה-hook הקיים נשמר כ-{os.path.basename(backup(main))}')
+    os.remove(main)
+HOOK_REL = None
+for nm in names:
+    path = os.path.join(P, '.claude', 'hooks', nm)
+    if same(path): HOOK_REL = f'.claude/hooks/{nm}'; done.append(f'זהה, לא נגעתי: {HOOK_REL}'); break
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, 'x', encoding='utf-8').write(HOOK_SRC); HOOK_REL = f'.claude/hooks/{nm}'; done.append(f'הועתק: {HOOK_REL}'); break
+    done.append(f'יש כבר {nm} שאינו ה-hook של הערכה. לא נגעתי בו ולא הרצתי אותו.')
+if not HOOK_REL: print('\n'.join(done)); print('לא נמצא שם פנוי ל-hook. ההתקנה נעצרה בלי לשנות את settings.json.'); sys.exit(1)
+if HOOK_REL != '.claude/hooks/capture_correction.py':
+    done.append(f'ה-hook של הערכה הותקן בשם {os.path.basename(HOOK_REL)}, ו-settings.json יפנה אליו.')
 copy('.claude/lessons/MISTAKES.md')
 copy('.claude/lessons/LESSONS_ACTIVE.md')
 # בקרה 5 צריכה קובץ מועמדים. נוצר ריק רק אם אין, בלי דריסה
@@ -72,6 +76,8 @@ else:
     open(cp, 'a', encoding='utf-8').write(('\n\n' if old.strip() else '') + sec + '\n'); done.append('נוסף סעיף ל-CLAUDE.md')
 # בקרה 1: רצה בתיקיית זמנית, כדי לא לגעת ב-candidates.jsonl האמיתי
 hook = os.path.join(P, HOOK_REL)  # רק ה-hook של הערכה, אף פעם לא hook אחר שלך
+if open(hook, encoding='utf-8').read() != open(hsrc, encoding='utf-8').read():
+    print('\n'.join(done)); print('בקרה 1: לא הורצה. הקובץ ב-' + HOOK_REL + ' אינו ה-hook של הערכה, ולכן לא הרצתי אותו.'); sys.exit(1)
 tmp = tempfile.mkdtemp(prefix='mk-check-')
 env = dict(os.environ, CLAUDE_PROJECT_DIR=tmp)
 r1 = subprocess.run([sys.executable, hook], input='{"prompt":"טעית, כבר אמרתי לך"}', capture_output=True, text=True, env=env)
