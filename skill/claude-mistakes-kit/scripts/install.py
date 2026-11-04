@@ -76,7 +76,7 @@ else:
     open(cp, 'a', encoding='utf-8').write(('\n\n' if old.strip() else '') + sec + '\n'); done.append('נוסף סעיף ל-CLAUDE.md')
 # בקרה 1: רצה בתיקיית זמנית, כדי לא לגעת ב-candidates.jsonl האמיתי
 hook = os.path.join(P, HOOK_REL)  # רק ה-hook של הערכה, אף פעם לא hook אחר שלך
-if open(hook, encoding='utf-8').read() != open(hsrc, encoding='utf-8').read():
+if not same(hook):
     print('\n'.join(done)); print('בקרה 1: לא הורצה. הקובץ ב-' + HOOK_REL + ' אינו ה-hook של הערכה, ולכן לא הרצתי אותו.'); sys.exit(1)
 tmp = tempfile.mkdtemp(prefix='mk-check-')
 env = dict(os.environ, CLAUDE_PROJECT_DIR=tmp)
