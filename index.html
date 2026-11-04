@@ -35,10 +35,18 @@ button{position:absolute;top:8px;left:8px;z-index:1;background:#e8e3d8;border:0;
 .demo .bar i{width:10px;height:10px;border-radius:50%;background:#ff5f57}.demo .bar i:nth-child(2){background:#febc2e}.demo .bar i:nth-child(3){background:#28c840}
 .demo .bar span{margin-left:auto;color:#8a8fa3;font-size:11px;direction:rtl}
 .demo .body{padding:12px 16px 16px;min-height:178px}
-.demo .ln{opacity:0;white-space:pre-wrap;animation:show 14s infinite}
+.demo .ln{opacity:0;white-space:pre-wrap;animation-duration:14s;animation-iteration-count:infinite}
 .demo .body{direction:rtl;text-align:right}.demo .u{color:#fff}.demo .h{color:#ffb86b;direction:rtl;text-align:right}.demo .c{color:#9ecbff;direction:rtl;text-align:right}.demo .g{color:#7ee787;direction:rtl;text-align:right}
-.demo .l1{animation-delay:0s}.demo .l2{animation-delay:1.6s}.demo .l3{animation-delay:3.2s}.demo .l4{animation-delay:4.6s}.demo .l5{animation-delay:6.2s}
-@keyframes show{0%{opacity:0;transform:translateY(6px)}4%,70%{opacity:1;transform:none}78%,100%{opacity:0}}
+@keyframes s1{0%,0%{opacity:0;transform:translateY(6px)}3%,88%{opacity:1;transform:none}94%,100%{opacity:0}}
+.demo .l1{animation-name:s1}
+@keyframes s2{0%,13%{opacity:0;transform:translateY(6px)}16%,88%{opacity:1;transform:none}94%,100%{opacity:0}}
+.demo .l2{animation-name:s2}
+@keyframes s3{0%,25%{opacity:0;transform:translateY(6px)}28%,88%{opacity:1;transform:none}94%,100%{opacity:0}}
+.demo .l3{animation-name:s3}
+@keyframes s4{0%,35%{opacity:0;transform:translateY(6px)}38%,88%{opacity:1;transform:none}94%,100%{opacity:0}}
+.demo .l4{animation-name:s4}
+@keyframes s5{0%,48%{opacity:0;transform:translateY(6px)}51%,88%{opacity:1;transform:none}94%,100%{opacity:0}}
+.demo .l5{animation-name:s5}
 .demo .l1 .typed{display:inline-block;animation:type 14s steps(30) infinite}
 @keyframes type{0%{clip-path:inset(0 0 0 100%)}9%,100%{clip-path:inset(0 0 0 0)}}
 .stats{display:flex;gap:12px;justify-content:center;margin:22px 0 0;flex-wrap:wrap}
