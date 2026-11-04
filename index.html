@@ -15,6 +15,13 @@ details.adv{margin-top:2.4em;border-top:1px solid #ddd;padding-top:1.2em} detail
 button{position:absolute;top:8px;left:8px;z-index:1;background:#e8e3d8;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem}
 .ctl{background:#fff;border-radius:10px;padding:14px 18px;margin:12px 0;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .ok{color:#2f5d3a} details{margin:.5em 0} summary{cursor:pointer;font-family:monospace}
+.community{margin:3em 0 1em;text-align:center;background:#fff;border-radius:14px;padding:26px 20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.community h2{margin:0;border:0;padding:0}
+.community p{color:#555;max-width:440px;margin:8px auto 18px}
+.cta{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;border-radius:999px;padding:12px 24px;margin:6px}
+.cta svg{width:20px;height:20px}
+.cta.wa{background:#25d366;color:#04240f} .cta.wa svg{fill:#04240f}
+.cta.li{background:#0a66c2;color:#fff} .cta.li svg{fill:#fff}
 footer{margin-top:3em;color:#777;font-size:.9rem}
 </style></head><body><main>
 <h1>טיפול בטעויות של קלוד קוד</h1>
@@ -250,5 +257,11 @@ if os.path.exists(rules):
 </details>
 <h2>מה הערכה לא עושה</h2>
 <p>ה-hook מזהה רק את הביטויים שברשימה, ובודק רק את 1,500 התווים הראשונים של ההודעה. תיקון בסוף הודעה ארוכה לא נתפס. תיקון שכתוב אחרת לא נתפס, ולכן קיימת בקרה 5. כלל כתוב לא מבטיח כלום, ולכן קיימת בקרה 6. וגם היומן לא כותב את עצמו. אם קלוד מקבל את ההנחיה ולא רושם, בקרה 3 תראה את זה.</p>
+<div class="community">
+<h2>רוצים עוד ערכות כאלה ?</h2>
+<p>בקהילת הסוכנים שלי אני משחרר סוכנים מוכנים, מדריכים וערכות, לפני כולם. בלינקדאין אני כותב על מה שעובד אצלי עם סוכנים, ועל מה שנכשל.</p>
+<a class="cta wa" href="https://chat.whatsapp.com/DHnMopzm1sF02RR4y6ej5j?mode=gi_t" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.5 2 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.03-.2-.31a8.23 8.23 0 0 1-1.26-4.36c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.2 8.2 0 0 1 2.41 5.83c0 4.55-3.7 8.25-8.24 8.25z"/></svg>להצטרפות לקהילה</a>
+<a class="cta li" href="https://www.linkedin.com/in/guycohen-ai/" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>לעקוב אחריי בלינקדאין</a>
+</div>
 <footer>גיא כהן, <a href="https://github.com/guycoful/claude-mistakes-kit">guycoful/claude-mistakes-kit</a></footer>
 </main><script>function cp(i){navigator.clipboard.writeText(document.getElementById(i).innerText);}</script></body></html>
