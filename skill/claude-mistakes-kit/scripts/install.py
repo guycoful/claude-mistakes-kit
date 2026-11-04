@@ -63,6 +63,9 @@ for event, groups in new['hooks'].items():
         cmd = g['hooks'][0]['command']
         if cmd in have: done.append(f'hook קיים: {event}'); continue
         hooks.setdefault(event, []).append(g); done.append(f'נוסף hook: {event}')
+allow = cur.setdefault('permissions', {}).setdefault('allow', [])
+for rule in new.get('permissions', {}).get('allow', []):
+    if rule not in allow: allow.append(rule); done.append(f'נוספה הרשאה: {rule}')
 if json.dumps(cur, sort_keys=True) != before:
     if os.path.exists(sp): done.append(f'גיבוי של settings.json: {os.path.basename(backup(sp))}')
     os.makedirs(os.path.dirname(sp), exist_ok=True)

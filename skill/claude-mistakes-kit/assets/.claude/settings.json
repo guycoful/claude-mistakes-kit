@@ -1,23 +1,38 @@
 {
+  "permissions": {
+    "allow": [
+      "Edit(.claude/lessons/MISTAKES.md)",
+      "Edit(**/.claude/lessons/MISTAKES.md)"
+    ]
+  },
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/capture_correction.py" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/capture_correction.py"
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/capture_correction.py --stop" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/capture_correction.py --stop"
+          }
         ]
       }
     ],
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "cat \"$CLAUDE_PROJECT_DIR\"/.claude/lessons/LESSONS_ACTIVE.md 2>/dev/null || true" }
+          {
+            "type": "command",
+            "command": "cat \"$CLAUDE_PROJECT_DIR\"/.claude/lessons/LESSONS_ACTIVE.md 2>/dev/null || true"
+          }
         ]
       }
     ]

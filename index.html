@@ -34,7 +34,7 @@ https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/
 https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/lessons/LESSONS_ACTIVE.md
 את ה-hook תשמור ב-.claude/hooks/capture_correction.py. אם כבר יש שם קובץ שונה, אל תיגע בו. תשמור את ה-hook בשם הפנוי הראשון מבין mistakes_kit_capture.py, mistakes_kit_capture_2.py וכן הלאה. קובץ שכבר קיים ושונה מה-hook שהורדת לא משנים ולא מריצים.
 את MISTAKES.md ואת LESSONS_ACTIVE.md תשמור ב-.claude/lessons/, רק אם הם לא קיימים. אם אין .claude/lessons/candidates.jsonl, תיצור קובץ ריק.
-2. תקרא את https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/settings.json. אם אין לי .claude/settings.json, תשמור אותו כמו שהוא, עם שם ה-hook שבחרת בשלב 1. אם יש, תוסיף את שני ה-hooks (UserPromptSubmit ו-SessionStart) בלי למחוק hooks קיימים, ורק אם אותה פקודה לא קיימת כבר.
+2. תקרא את https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/.claude/settings.json. אם אין לי .claude/settings.json, תשמור אותו כמו שהוא, עם שם ה-hook שבחרת בשלב 1. אם יש, תוסיף את שלושת ה-hooks (UserPromptSubmit, Stop ו-SessionStart) ואת ההרשאות שב-permissions.allow, בלי למחוק hooks או הרשאות קיימים, ורק אם אותה פקודה לא קיימת כבר.
 3. תוסיף לסוף CLAUDE.md של הפרויקט את הסעיף מ-https://raw.githubusercontent.com/guycoful/claude-mistakes-kit/main/kit/CLAUDE-section.md, רק אם הוא לא שם כבר. אם אין CLAUDE.md, תיצור אותו.
 4. תריץ את בקרה 1 על ה-hook ששמרת בשלב 1, אחרי שתוודא שהתוכן שלו זהה לקובץ שהורדת. הבדיקה רצה בתיקייה זמנית, ולכן לא נוגעת ב-candidates.jsonl של הפרויקט:
 echo &#x27;{&quot;prompt&quot;:&quot;טעית, כבר אמרתי לך&quot;}&#x27; | CLAUDE_PROJECT_DIR=&quot;$(mktemp -d)&quot; python3 .claude/hooks/&lt;השם ששמרת&gt;
@@ -141,25 +141,40 @@ print(&quot;4. אם לדעתך לא טעית, תכתוב למה, עם ציטוט
 rules = os.path.join(base, &quot;LESSONS_ACTIVE.md&quot;)
 if os.path.exists(rules):
     print(open(rules, encoding=&quot;utf8&quot;).read())</pre></div></details><details><summary>.claude/settings.json</summary><div class="box"><button onclick="cp('fsettings')">העתקה</button><pre id="fsettings">{
+  &quot;permissions&quot;: {
+    &quot;allow&quot;: [
+      &quot;Edit(.claude/lessons/MISTAKES.md)&quot;,
+      &quot;Edit(**/.claude/lessons/MISTAKES.md)&quot;
+    ]
+  },
   &quot;hooks&quot;: {
     &quot;UserPromptSubmit&quot;: [
       {
         &quot;hooks&quot;: [
-          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;python3 \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/capture_correction.py&quot; }
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;python3 \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/capture_correction.py&quot;
+          }
         ]
       }
     ],
     &quot;Stop&quot;: [
       {
         &quot;hooks&quot;: [
-          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;python3 \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/capture_correction.py --stop&quot; }
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;python3 \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/hooks/capture_correction.py --stop&quot;
+          }
         ]
       }
     ],
     &quot;SessionStart&quot;: [
       {
         &quot;hooks&quot;: [
-          { &quot;type&quot;: &quot;command&quot;, &quot;command&quot;: &quot;cat \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/lessons/LESSONS_ACTIVE.md 2&gt;/dev/null || true&quot; }
+          {
+            &quot;type&quot;: &quot;command&quot;,
+            &quot;command&quot;: &quot;cat \&quot;$CLAUDE_PROJECT_DIR\&quot;/.claude/lessons/LESSONS_ACTIVE.md 2&gt;/dev/null || true&quot;
+          }
         ]
       }
     ]
