@@ -15,7 +15,7 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py "$PWD"
 מה הסקריפט עושה:
 - מעתיק את ה-hook ל-`.claude/hooks/capture_correction.py`. אם כבר יש שם hook שונה, לא נוגע בו ולא מריץ אותו: מציג diff ומתקין את ה-hook של הערכה בשם `mistakes_kit_capture.py`. עם `--force` ה-hook הקיים מוחלף, ונשמר קודם גיבוי עם תאריך ושעה בשם.
 - יוצר את `.claude/lessons/MISTAKES.md` ואת `LESSONS_ACTIVE.md`. אם הם כבר קיימים, לא נוגע בהם.
-- ממזג 2 hooks ל-`.claude/settings.json`, UserPromptSubmit ו-SessionStart, בלי למחוק hooks קיימים. גיבוי נשמר רק אם ההגדרות משתנות, עם תאריך ושעה בשם, כך שהתקנה חוזרת לא דורסת את הגיבוי המקורי. נוצר `candidates.jsonl` ריק אם אין.
+- ממזג 3 hooks ל-`.claude/settings.json`, UserPromptSubmit, Stop ו-SessionStart, בלי למחוק hooks קיימים. גיבוי נשמר רק אם ההגדרות משתנות, עם תאריך ושעה בשם, כך שהתקנה חוזרת לא דורסת את הגיבוי המקורי. נוצר `candidates.jsonl` ריק אם אין.
 - מוסיף ל-CLAUDE.md סעיף "טעויות" פעם אחת.
 - מריץ את בקרה 1 בתיקייה זמנית, כדי לא לגעת ב-`candidates.jsonl` של הפרויקט: הודעה עם תיקון צריכה להחזיר הנחיה, והודעה בלי תיקון לא מחזירה כלום.
 
