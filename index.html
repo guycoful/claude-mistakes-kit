@@ -18,8 +18,8 @@ footer{margin-top:3em;color:#777;font-size:.9rem}
 <p class="lead">תיקון בצ'אט לא מספיק. קלוד מסכים באותו רגע, וטעות מאותו סוג חוזרת. זו הערכה שבניתי כדי שכל תיקון יהפוך לבדיקה. היא עובדת בתוך הפרויקט, בלי שרת ובלי חיבורים.</p>
 <h2>איך זה עובד</h2>
 <ol class="loop">
-<li>hook של UserPromptSubmit מזהה בהודעה שלכם תיקון, כמו "טעית" או "כבר אמרתי". הוא רושם את ההודעה, ומזריק לקלוד הנחיה לרשום את הטעות לפני שהוא עונה.</li>
-<li>כל טעות נכנסת ל-MISTAKES.md עם ציטוט, הכלל שנשבר, מוסר השכל ומה שונה בפועל. אם לא שונה כלום, כותבים "טרם יושם". hook של Stop בודק את זה: אם בסשן נרשמו תיקונים, ולא נוספו ל-MISTAKES.md רשומות חדשות עם "מוסר השכל" לפחות כמספר התיקונים, הוא עוצר את סיום התשובה פעם אחת ומבקש את הרשומות החסרות. היומן יושב ב-lessons/ בשורש הפרויקט ולא בתוך .claude/, כי קלוד קוד חוסם כתיבה לקבצים תחת .claude/. גילינו את זה בבדיקה בסשן אמיתי, כשקלוד ניסה לכתוב רשומה ונחסם.</li>
+<li>hook של UserPromptSubmit מזהה בהודעה שלכם תיקון, כמו "טעית" או "כבר אמרתי". הוא רושם את ההודעה, נותן לתיקון מזהה, ומזריק לקלוד הנחיה לרשום את הטעות עם המזהה לפני שהוא עונה.</li>
+<li>הרשומה ב-MISTAKES.md כוללת ציטוט, הכלל שנשבר, מוסר השכל ומה שונה בפועל. אם לא שונה כלום, כותבים "טרם יושם". hook של Stop בודק שהמזהה של כל תיקון מהסשן מופיע ביומן. אם חסר מזהה, הוא עוצר את סיום התשובה ומבקש רשומה. הוא חוסם פעם אחת בכל תשובה, כדי שלא תהיה לולאה, וחוזר לחסום בתשובה הבאה עד שהמזהה מופיע. הוא בודק שהרשומה קיימת, ולא את האיכות שלה. את זה בודקים אתם ובודק השבוע. היומן יושב ב-lessons/ בשורש הפרויקט ולא בתוך .claude/, כי קלוד קוד חוסם כתיבה לקבצים תחת .claude/. גילינו את זה בבדיקה בסשן אמיתי, כשקלוד ניסה לכתוב רשומה ונחסם.</li>
 <li>פעם בשבוע מודל של חברה אחרת עובר על היומן. הוא מחפש סיבת שורש ומה חוזר, ומציע כלל.</li>
 <li>כלל שאישרתם נכנס ל-LESSONS_ACTIVE.md. hook של SessionStart טוען אותו בתחילת כל סשן.</li>
 <li>פעם בחודש בודקים אם הטעות חזרה אחרי שהכלל נוסף. אם חזרה, הכלל לא עובד, ומחליפים אותו בבדיקה מכנית.</li>
@@ -73,11 +73,13 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py &quot;$PWD&quot;
 <p>אותם קבצים שהפרומפט מוריד. אפשר גם <a href="https://github.com/guycoful/claude-mistakes-kit/tree/main/kit">בריפו</a>.</p>
 <details><summary>.claude/hooks/capture_correction.py</summary><div class="box"><button onclick="cp('fhook')">העתקה</button><pre id="fhook">#!/usr/bin/env python3
 # UserPromptSubmit hook: מזהה תיקון בהודעה שלך, רושם אותו, ומזריק לקלוד את הלקחים הפעילים לפני שהוא עונה.
-# עם --stop הוא רץ כ-Stop hook: אם בסשן נרשמו תיקונים ולא נוספו ל-lessons/MISTAKES.md רשומות חדשות (שורות &quot;מוסר השכל:&quot; אחרי &quot;## רשומות&quot;) במספר התיקונים,
-# הוא עוצר את סיום התשובה פעם אחת ומבקש את הרשומות החסרות.
-import sys, json, re, os, datetime
+# לכל תיקון יש מזהה (למשל #mk-3f9a1c), וקלוד מתבקש לכתוב אותו ברשומה ב-lessons/MISTAKES.md.
+# עם --stop הוא רץ כ-Stop hook: אם מזהה של תיקון מהסשן לא מופיע ביומן, הוא עוצר את סיום התשובה ומבקש רשומה.
+# חסימה אחת לכל תשובה, כדי שלא תיווצר לולאה. המעקב נשאר פתוח, והחסימה חוזרת בתשובה הבאה עד שהמזהה מופיע.
+# המגבלה: ה-hook בודק שהמזהה מופיע ביומן, ולא בודק את איכות הרשומה.
+import sys, json, re, os, datetime, secrets
 
-FORMAT = (&#x27;תאריך | מה קרה, עם ציטוט | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, עם תאריך קודם, או לא)\n&#x27;
+FORMAT = (&#x27;תאריך | מזהה התיקון | מה קרה, עם ציטוט | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, עם תאריך קודם, או לא)\n&#x27;
           &#x27;מוסר השכל: המשפט הכללי.\n&#x27;
           &#x27;הפתרון שיושם: מה שונה בפועל, עם נתיב. אם לא שונה כלום: &quot;טרם יושם&quot;, ומה מוצע.&#x27;)
 
@@ -86,20 +88,35 @@ def lessons_dir(data):
     return os.path.join(os.environ.get(&quot;CLAUDE_PROJECT_DIR&quot;) or data.get(&quot;cwd&quot;) or os.getcwd(), &quot;lessons&quot;)
 
 
-def entry_count(base):
-    &quot;&quot;&quot;מספר הרשומות: שורות שמתחילות ב&#x27;מוסר השכל:&#x27; אחרי הכותרת &#x27;## רשומות&#x27;. None אם היומן חסר.&quot;&quot;&quot;
+def read_log(base):
     try:
-        t = open(os.path.join(base, &quot;MISTAKES.md&quot;), encoding=&quot;utf8&quot;).read()
+        return open(os.path.join(base, &quot;MISTAKES.md&quot;), encoding=&quot;utf8&quot;).read()
     except OSError:
         return None
-    if &quot;## רשומות&quot; in t:
-        t = t.split(&quot;## רשומות&quot;, 1)[1]
-    return sum(1 for line in t.splitlines() if line.strip().startswith(&quot;מוסר השכל:&quot;))
 
 
 def pending_path(base, data):
     sid = re.sub(r&quot;[^A-Za-z0-9_-]&quot;, &quot;&quot;, str(data.get(&quot;session_id&quot;) or &quot;nosession&quot;))[:80] or &quot;nosession&quot;
     return os.path.join(base, f&quot;.pending_entry-{sid}.json&quot;)
+
+
+def load_pending(path):
+    &quot;&quot;&quot;מחזיר (ids, corrupt). סמן פגום לא מתאפס: הוא נשמר בצד ומסומן, כדי שתיקונים קודמים לא ייעלמו מהמעקב.&quot;&quot;&quot;
+    if not os.path.exists(path):
+        return [], False
+    try:
+        p = json.load(open(path, encoding=&quot;utf8&quot;))
+        ids = [str(i) for i in p[&quot;ids&quot;]]
+        return ids, bool(p.get(&quot;corrupt&quot;))
+    except Exception:
+        keep = f&quot;{path}.corrupt-{datetime.datetime.now().strftime(&#x27;%Y%m%d-%H%M%S&#x27;)}&quot;
+        os.replace(path, keep)
+        return [], True
+
+
+def save_pending(path, ids, corrupt):
+    with open(path, &quot;w&quot;, encoding=&quot;utf8&quot;) as f:
+        json.dump({&quot;ids&quot;: ids, &quot;corrupt&quot;: corrupt, &quot;ts&quot;: datetime.datetime.now().isoformat(timespec=&quot;seconds&quot;)}, f)
 
 
 try:
@@ -112,31 +129,27 @@ if &quot;--stop&quot; in sys.argv[1:]:
     pending = pending_path(base, data)
     if not os.path.exists(pending):
         sys.exit(0)
-    try:
-        p = json.load(open(pending, encoding=&quot;utf8&quot;))
-        needed, baseline = int(p[&quot;needed&quot;]), int(p[&quot;baseline&quot;])
-    except Exception:
-        needed, baseline = None, None  # סמן פגום: לא מניחים שהרשומה נכתבה
-    now = entry_count(base)
-    if needed is not None and now is not None and now &gt;= baseline + needed:
+    ids, corrupt = load_pending(pending)
+    log = read_log(base)
+    missing = [i for i in ids if log is None or i not in log]
+    if not missing and not corrupt:
         os.remove(pending)
         sys.exit(0)
     if data.get(&quot;stop_hook_active&quot;):
-        # כבר חסמנו פעם אחת בתשובה הזו. לא חוסמים שוב, כדי שלא תיווצר לולאה.
-        os.remove(pending)
+        # כבר חסמנו פעם אחת בתשובה הזו. לא חוסמים שוב, אבל המעקב נשאר פתוח לתשובה הבאה.
+        save_pending(pending, missing, False)
         sys.exit(0)
-    if now is None:
-        reason = (&quot;[טיפול בטעויות] בסשן נרשם תיקון, ו-lessons/MISTAKES.md חסר. לפני שאתה מסיים, תיצור אותו עם הכותרות &quot;
-                  &quot;&#x27;# יומן טעויות&#x27; ו-&#x27;## רשומות&#x27;, ותוסיף תחת &#x27;## רשומות&#x27; רשומה בפורמט הזה:\n&quot; + FORMAT)
-    elif needed is None:
-        reason = (&quot;[טיפול בטעויות] בסשן נרשם תיקון, אבל קובץ המעקב שלו פגום, ולא ידוע אם נוספה רשומה. &quot;
-                  &quot;תבדוק ב-lessons/MISTAKES.md שיש רשומה לכל תיקון מהסשן הזה, ואם חסרה, תוסיף אותה בפורמט שבקובץ.&quot;)
-    else:
-        missing = baseline + needed - now
-        reason = (f&quot;[טיפול בטעויות] בסשן נרשמו {needed} תיקונים, וב-lessons/MISTAKES.md חסרות {missing} רשומות חדשות. &quot;
-                  &quot;לפני שאתה מסיים, תוסיף תחת &#x27;## רשומות&#x27; רשומה לכל תיקון, בפורמט שבקובץ, עם שורת &#x27;מוסר השכל:&#x27; ושורת &#x27;הפתרון שיושם:&#x27;. &quot;
-                  &quot;אם לדעתך לא טעית, תכתוב את זה ברשומה, עם ציטוט.&quot;)
-    print(json.dumps({&quot;decision&quot;: &quot;block&quot;, &quot;reason&quot;: reason}, ensure_ascii=False))
+    save_pending(pending, missing, False)
+    parts = [&quot;[טיפול בטעויות] לפני שאתה מסיים:&quot;]
+    if log is None:
+        parts.append(&quot;lessons/MISTAKES.md חסר. תיצור אותו עם הכותרות &#x27;# יומן טעויות&#x27; ו-&#x27;## רשומות&#x27;.&quot;)
+    if missing:
+        parts.append(&quot;חסרה ב-lessons/MISTAKES.md רשומה לתיקונים האלה: &quot; + &quot;, &quot;.join(missing) + &quot;. &quot;
+                     &quot;תוסיף תחת &#x27;## רשומות&#x27; רשומה לכל אחד, עם המזהה שלו, בפורמט:\n&quot; + FORMAT)
+    if corrupt:
+        parts.append(&quot;קובץ המעקב היה פגום, ולכן ייתכן שיש בסשן תיקונים קודמים בלי רשומה. תבדוק בשיחה ותוסיף רשומה לכל תיקון שחסר.&quot;)
+    parts.append(&quot;אם לדעתך לא טעית, תכתוב את זה ברשומה, עם ציטוט.&quot;)
+    print(json.dumps({&quot;decision&quot;: &quot;block&quot;, &quot;reason&quot;: &quot;\n&quot;.join(parts)}, ensure_ascii=False))
     sys.exit(0)
 
 text = (data.get(&quot;prompt&quot;) or &quot;&quot;)[:1500]
@@ -158,23 +171,20 @@ context = text[max(0, pos - 200):pos + 200]
 base = lessons_dir(data)
 os.makedirs(base, exist_ok=True)
 pending = pending_path(base, data)
-try:
-    p = json.load(open(pending, encoding=&quot;utf8&quot;))
-    p = {&quot;needed&quot;: int(p[&quot;needed&quot;]) + 1, &quot;baseline&quot;: int(p[&quot;baseline&quot;])}
-except Exception:
-    p = {&quot;needed&quot;: 1, &quot;baseline&quot;: entry_count(base) or 0}
-p[&quot;ts&quot;] = datetime.datetime.now().isoformat(timespec=&quot;seconds&quot;)
-with open(pending, &quot;w&quot;, encoding=&quot;utf8&quot;) as f:
-    json.dump(p, f)
+ids, corrupt = load_pending(pending)
+cid = &quot;#mk-&quot; + secrets.token_hex(3)
+ids.append(cid)
+save_pending(pending, ids, corrupt)
+ts = datetime.datetime.now().isoformat(timespec=&quot;seconds&quot;)
 with open(os.path.join(base, &quot;candidates.jsonl&quot;), &quot;a&quot;, encoding=&quot;utf8&quot;) as f:
-    f.write(json.dumps({&quot;ts&quot;: p[&quot;ts&quot;], &quot;markers&quot;: hits, &quot;text&quot;: text[:300], &quot;context&quot;: context}, ensure_ascii=False) + &quot;\n&quot;)
+    f.write(json.dumps({&quot;ts&quot;: ts, &quot;id&quot;: cid, &quot;markers&quot;: hits, &quot;text&quot;: text[:300], &quot;context&quot;: context}, ensure_ascii=False) + &quot;\n&quot;)
 
-print(&quot;[טיפול בטעויות] בהודעה הזו יש תיקון. לפני שאתה עונה:&quot;)
+print(f&quot;[טיפול בטעויות] בהודעה הזו יש תיקון, והמזהה שלו {cid}. לפני שאתה עונה:&quot;)
 print(&quot;1. תכתוב איזה כלל נשבר.&quot;)
 print(&quot;2. תבדוק ב-lessons/MISTAKES.md אם טעות כזו כבר הופיעה.&quot;)
-print(&quot;3. תוסיף רשומה תחת &#x27;## רשומות&#x27;, לפי הפורמט שבקובץ, עם מוסר השכל ומה שונה בפועל.&quot;)
+print(f&quot;3. תוסיף רשומה תחת &#x27;## רשומות&#x27;, לפי הפורמט שבקובץ, עם המזהה {cid}, מוסר השכל ומה שונה בפועל.&quot;)
 print(&quot;4. אם לדעתך לא טעית, תכתוב למה, עם ציטוט. אל תסכים רק כדי לרצות.&quot;)
-if not os.path.exists(os.path.join(base, &quot;MISTAKES.md&quot;)):
+if read_log(base) is None:
     print(&quot;lessons/MISTAKES.md חסר. תיצור אותו עם &#x27;# יומן טעויות&#x27; ו-&#x27;## רשומות&#x27;, והפורמט הוא:\n&quot; + FORMAT)
 rules = os.path.join(base, &quot;LESSONS_ACTIVE.md&quot;)
 if os.path.exists(rules):
@@ -214,12 +224,12 @@ if os.path.exists(rules):
 }</pre></div></details><details><summary>lessons/MISTAKES.md</summary><div class="box"><button onclick="cp('fmist')">העתקה</button><pre id="fmist"># יומן טעויות
 
 ## פורמט
-תאריך | מה קרה, עם ציטוט | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, עם תאריך קודם, או לא)
+תאריך | מזהה התיקון (#mk-...) אם ה-hook נתן כזה | מה קרה, עם ציטוט | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, עם תאריך קודם, או לא)
 מוסר השכל: המשפט הכללי, כך שיחול גם על מקרים אחרים.
 הפתרון שיושם: מה שונה בפועל (כלל ב-LESSONS_ACTIVE.md, hook או סקריפט), עם נתיב. אם לא שונה כלום: &quot;טרם יושם&quot;, ומה מוצע.
 
 ## רשומות</pre></div></details><details><summary>CLAUDE-section.md</summary><div class="box"><button onclick="cp('fcmd')">העתקה</button><pre id="fcmd">## טעויות
-- כשאני מתקן אותך, תוסיף רשומה ל-lessons/MISTAKES.md לפי הפורמט, באותו רגע ולא בסוף הסשן.
+- כשאני מתקן אותך, תוסיף רשומה ל-lessons/MISTAKES.md לפי הפורמט, באותו רגע ולא בסוף הסשן. אם ה-hook נתן מזהה (#mk-...), תכתוב אותו ברשומה.
 - רשומה בלי &quot;מוסר השכל&quot; ובלי &quot;הפתרון שיושם&quot; לא גמורה.
 - לפני שאתה כותב רשומה, תחפש ב-MISTAKES.md טעות דומה. אם יש, תסמן &quot;חוזרת&quot; עם התאריך הקודם.
 - טעות שחוזרת פעם שנייה: תציע כלל קצר ל-LESSONS_ACTIVE.md, ותחכה לאישור שלי לפני שאתה מוסיף אותו.

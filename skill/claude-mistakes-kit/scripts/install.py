@@ -6,7 +6,7 @@
 אם כבר יש capture_correction.py שונה, ה-hook של הערכה מותקן בשם נפרד (mistakes_kit_capture.py), וה-hook שלך לא מורץ.
 גיבוי של settings.json נוצר רק כשההגדרות משתנות, עם תאריך ושעה בשם, ולא דורס גיבוי קודם.
 בסוף מריץ את בקרה 1 בתיקייה זמנית, על ה-hook של הערכה בלבד."""
-import datetime, difflib, json, os, shutil, subprocess, sys, tempfile
+import datetime, difflib, json, os, re, shutil, subprocess, sys, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 A = os.path.join(HERE, '..', 'assets')
 FORCE = '--force' in sys.argv
@@ -30,11 +30,12 @@ def copy(rel, dst_rel=None):
 # ה-hook: לא נוגעים בקובץ שאינו של הערכה ולא מריצים אותו. בוחרים את השם הראשון שפנוי או שכבר מכיל בדיוק את ה-hook של הערכה.
 HOOK_SRC = open(os.path.join(A, '.claude', 'hooks', 'capture_correction.py'), encoding='utf-8').read()
 def same(path): return os.path.exists(path) and open(path, encoding='utf-8').read() == HOOK_SRC
+# sha256 של כל הגרסאות הקודמות של ה-hook של הערכה. רק קובץ שזהה בדיוק לאחת מהן מוחלף. hook זר או ערוך לא נוגעים בו.
+OLD_HOOKS = {'09fb4405ce812c52f0490a5aee1a178f84c7836e203e4ed66b391a10924e4a6c', '2cf462e251861093d56d8546a0794825c98fecd6f1d4005ed5de722dc1040903', '5e080b934a377ec9b29e2b4e2cfd59d17c4f3f3704bd068ebfbb8df7bb5c8952', '5e80e48e0349febbe09b47605a44a73cd79319d85d67d724af5eb3ad84231680', 'c6c347f10b0e3df249693e68ce5fa619a4a2686e26d3e23d113311a7ded8a4ce'}
 def old_kit(path):
-    # גרסה קודמת של ה-hook של הערכה: אותה הנחיה, והיומן תחת .claude/lessons
     if not os.path.exists(path): return False
-    t = open(path, encoding='utf-8', errors='replace').read()
-    return '[טיפול בטעויות] בהודעה הזו יש תיקון' in t and '".claude", "lessons"' in t
+    import hashlib
+    return hashlib.sha256(open(path, 'rb').read()).hexdigest() in OLD_HOOKS
 names = ['capture_correction.py', 'mistakes_kit_capture.py'] + [f'mistakes_kit_capture_{i}.py' for i in range(2, 20)]
 main = os.path.join(P, '.claude', 'hooks', names[0])
 if FORCE and os.path.exists(main) and not same(main):
@@ -102,10 +103,12 @@ else: done.append('settings.json לא השתנה, ולא נוצר גיבוי')
 # CLAUDE.md
 cp = os.path.join(P, 'CLAUDE.md'); sec = open(os.path.join(A, 'CLAUDE-section.md'), encoding='utf-8').read().strip()
 old = open(cp, encoding='utf-8').read() if os.path.exists(cp) else ''
-old_sec = sec.replace('lessons/MISTAKES.md', '.claude/lessons/MISTAKES.md')
-if old_sec in old:
-    backup(cp); open(cp, 'w', encoding='utf-8').write(old.replace(old_sec, sec, 1)); done.append('הסעיף ב-CLAUDE.md עודכן מהגרסה הקודמת (גיבוי נשמר)')
-elif sec in old: done.append('הסעיף כבר קיים ב-CLAUDE.md')
+# כל הנוסחים הקודמים של הסעיף. נוסח שנמצא כמו שהוא מוחלף בחדש, כדי שלא יהיו שני סעיפים.
+OLD_SECS = ['## טעויות\n- כשאני מתקן אותך, תוסיף רשומה ל-.claude/lessons/MISTAKES.md לפי הפורמט, באותו רגע ולא בסוף הסשן.\n- רשומה בלי "מוסר השכל" ובלי "הפתרון שיושם" לא גמורה.\n- לפני שאתה כותב רשומה, תחפש ב-MISTAKES.md טעות דומה. אם יש, תסמן "חוזרת" עם התאריך הקודם.\n- טעות שחוזרת פעם שנייה: תציע כלל קצר ל-LESSONS_ACTIVE.md, ותחכה לאישור שלי לפני שאתה מוסיף אותו.\n- אל תסכים איתי רק כדי לרצות. אם לדעתך לא טעית, תכתוב למה, עם ציטוט.', '## טעויות\n- כשאני מתקן אותך, תוסיף רשומה ל-lessons/MISTAKES.md לפי הפורמט, באותו רגע ולא בסוף הסשן.\n- רשומה בלי "מוסר השכל" ובלי "הפתרון שיושם" לא גמורה.\n- לפני שאתה כותב רשומה, תחפש ב-MISTAKES.md טעות דומה. אם יש, תסמן "חוזרת" עם התאריך הקודם.\n- טעות שחוזרת פעם שנייה: תציע כלל קצר ל-LESSONS_ACTIVE.md, ותחכה לאישור שלי לפני שאתה מוסיף אותו.\n- אל תסכים איתי רק כדי לרצות. אם לדעתך לא טעית, תכתוב למה, עם ציטוט.']
+found_old = next((o for o in OLD_SECS if o in old), None)
+if sec in old: done.append('הסעיף כבר קיים ב-CLAUDE.md')
+elif found_old:
+    backup(cp); open(cp, 'w', encoding='utf-8').write(old.replace(found_old, sec, 1)); done.append('הסעיף ב-CLAUDE.md עודכן מהגרסה הקודמת (גיבוי נשמר)')
 else:
     open(cp, 'a', encoding='utf-8').write(('\n\n' if old.strip() else '') + sec + '\n'); done.append('נוסף סעיף ל-CLAUDE.md')
 # בקרה 1: רצה בתיקיית זמנית, כדי לא לגעת ב-candidates.jsonl האמיתי
@@ -119,7 +122,8 @@ r0 = subprocess.run([sys.executable, hook], input='{"prompt":"תודה, זה מ�
 cand = os.path.join(tmp, 'lessons', 'candidates.jsonl')
 n = len(open(cand, encoding='utf-8').read().splitlines()) if os.path.exists(cand) else 0
 s1 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output=True, text=True, env=env)
-open(os.path.join(tmp, 'lessons', 'MISTAKES.md'), 'w', encoding='utf-8').write('## רשומות\n- בדיקה\nמוסר השכל: בדיקה\nהפתרון שיושם: בדיקה\n')
+m = re.search(r'#mk-[0-9a-f]+', r1.stdout)
+open(os.path.join(tmp, 'lessons', 'MISTAKES.md'), 'w', encoding='utf-8').write(f'## רשומות\n- בדיקה | {m.group(0) if m else "-"}\nמוסר השכל: בדיקה\nהפתרון שיושם: בדיקה\n')
 s2 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output=True, text=True, env=env)
 ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1 and '"block"' in s1.stdout and s2.stdout == ''
 shutil.rmtree(tmp, ignore_errors=True)
