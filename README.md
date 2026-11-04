@@ -7,8 +7,8 @@
 הקבצים בתיקייה kit/:
 - .claude/hooks/capture_correction.py: hook של UserPromptSubmit שמזהה תיקון ורושם אותו. עם --stop הוא רץ כ-hook של Stop, ועוצר את סיום התשובה פעם אחת אם נרשם תיקון ו-MISTAKES.md לא השתנה
 - .claude/settings.json: רישום ה-hooks (UserPromptSubmit, Stop ו-SessionStart)
-- .claude/lessons/MISTAKES.md: תבנית היומן
-- .claude/lessons/LESSONS_ACTIVE.md: הלקחים שנטענים בתחילת סשן
+- lessons/MISTAKES.md: תבנית היומן
+- lessons/LESSONS_ACTIVE.md: הלקחים שנטענים בתחילת סשן
 - CLAUDE-section.md: הסעיף להוספה ל-CLAUDE.md
 
 ## הסקיל הנלווה

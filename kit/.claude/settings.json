@@ -1,10 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Edit(.claude/lessons/MISTAKES.md)",
-      "Edit(**/.claude/lessons/MISTAKES.md)"
-    ]
-  },
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -31,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat \"$CLAUDE_PROJECT_DIR\"/.claude/lessons/LESSONS_ACTIVE.md 2>/dev/null || true"
+            "command": "cat \"$CLAUDE_PROJECT_DIR\"/lessons/LESSONS_ACTIVE.md 2>/dev/null || true"
           }
         ]
       }

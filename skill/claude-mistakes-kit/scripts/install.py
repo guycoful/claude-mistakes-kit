@@ -45,11 +45,14 @@ for nm in names:
 if not HOOK_REL: print('\n'.join(done)); print('לא נמצא שם פנוי ל-hook. ההתקנה נעצרה בלי לשנות את settings.json.'); sys.exit(1)
 if HOOK_REL != '.claude/hooks/capture_correction.py':
     done.append(f'ה-hook של הערכה הותקן בשם {os.path.basename(HOOK_REL)}, ו-settings.json יפנה אליו.')
-copy('.claude/lessons/MISTAKES.md')
-copy('.claude/lessons/LESSONS_ACTIVE.md')
+old = os.path.join(P, '.claude', 'lessons')
+if os.path.isdir(old):
+    done.append('נמצאה תיקייה ישנה .claude/lessons. הערכה עברה ל-lessons/ בשורש הפרויקט, כי קלוד קוד חוסם כתיבה תחת .claude/. לא העברתי אותה. תעבירו את הרשומות שלכם ל-lessons/ בעצמכם.')
+copy('lessons/MISTAKES.md')
+copy('lessons/LESSONS_ACTIVE.md')
 # בקרה 5 צריכה קובץ מועמדים. נוצר ריק רק אם אין, בלי דריסה
-cf = os.path.join(P, '.claude', 'lessons', 'candidates.jsonl')
-if not os.path.exists(cf): open(cf, 'x', encoding='utf-8').close(); done.append('נוצר קובץ ריק: .claude/lessons/candidates.jsonl')
+cf = os.path.join(P, 'lessons', 'candidates.jsonl')
+if not os.path.exists(cf): open(cf, 'x', encoding='utf-8').close(); done.append('נוצר קובץ ריק: lessons/candidates.jsonl')
 # settings.json: מיזוג בלי למחוק
 sp = os.path.join(P, '.claude', 'settings.json')
 new = json.load(open(os.path.join(A, '.claude', 'settings.json'), encoding='utf-8'))
@@ -85,7 +88,7 @@ tmp = tempfile.mkdtemp(prefix='mk-check-')
 env = dict(os.environ, CLAUDE_PROJECT_DIR=tmp)
 r1 = subprocess.run([sys.executable, hook], input='{"prompt":"טעית, כבר אמרתי לך"}', capture_output=True, text=True, env=env)
 r0 = subprocess.run([sys.executable, hook], input='{"prompt":"תודה, זה מעולה"}', capture_output=True, text=True, env=env)
-cand = os.path.join(tmp, '.claude', 'lessons', 'candidates.jsonl')
+cand = os.path.join(tmp, 'lessons', 'candidates.jsonl')
 n = len(open(cand, encoding='utf-8').read().splitlines()) if os.path.exists(cand) else 0
 ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1
 shutil.rmtree(tmp, ignore_errors=True)

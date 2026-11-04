@@ -3,7 +3,7 @@
 import datetime, os, sys
 kind = sys.argv[1] if len(sys.argv) > 1 else 'weekly'
 P = os.path.abspath(sys.argv[2] if len(sys.argv) > 2 else os.getcwd())
-L = os.path.join(P, '.claude', 'lessons')
+L = os.path.join(P, 'lessons')
 WEEKLY = """אתה בודק. לא כתבת את הרשומות האלה, ואין לך את ההסברים של מי שכתב אותן.
 לכל רשומה מהשבוע האחרון:
 1. סיבת השורש במשפט אחד, עם ציטוט מהרשומה.

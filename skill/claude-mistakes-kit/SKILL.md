@@ -14,7 +14,7 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py "$PWD"
 ```
 מה הסקריפט עושה:
 - מעתיק את ה-hook ל-`.claude/hooks/capture_correction.py`. אם כבר יש שם hook שונה, לא נוגע בו ולא מריץ אותו: מציג diff ומתקין את ה-hook של הערכה בשם `mistakes_kit_capture.py`. עם `--force` ה-hook הקיים מוחלף, ונשמר קודם גיבוי עם תאריך ושעה בשם.
-- יוצר את `.claude/lessons/MISTAKES.md` ואת `LESSONS_ACTIVE.md`. אם הם כבר קיימים, לא נוגע בהם.
+- יוצר את `lessons/MISTAKES.md` ואת `LESSONS_ACTIVE.md`. אם הם כבר קיימים, לא נוגע בהם.
 - ממזג 3 hooks ל-`.claude/settings.json`, UserPromptSubmit, Stop ו-SessionStart, בלי למחוק hooks קיימים. גיבוי נשמר רק אם ההגדרות משתנות, עם תאריך ושעה בשם, כך שהתקנה חוזרת לא דורסת את הגיבוי המקורי. נוצר `candidates.jsonl` ריק אם אין.
 - מוסיף ל-CLAUDE.md סעיף "טעויות" פעם אחת.
 - מריץ את בקרה 1 בתיקייה זמנית, כדי לא לגעת ב-`candidates.jsonl` של הפרויקט: הודעה עם תיקון צריכה להחזיר הנחיה, והודעה בלי תיקון לא מחזירה כלום.
@@ -24,7 +24,7 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/install.py "$PWD"
 ## 2. כשהמשתמש מתקן אותך
 ה-hook מזריק הנחיה כשהוא מזהה ביטוי של תיקון. גם בלי ה-hook, הסדר זהה:
 1. כותבים במשפט אחד איזה כלל נשבר.
-2. מחפשים ב-`.claude/lessons/MISTAKES.md` טעות דומה.
+2. מחפשים ב-`lessons/MISTAKES.md` טעות דומה.
 3. מוסיפים רשומה באותו רגע, ולא בסוף הסשן:
 ```
 DD.MM.YYYY | מה קרה, עם ציטוט של המשתמש | הכלל שנשבר | מה בודקים בפעם הבאה | חוזרת ? (כן, DD.MM / לא)
@@ -58,7 +58,7 @@ python3 ~/.claude/skills/claude-mistakes-kit/scripts/status.py "$PWD"
 python3 ~/.claude/skills/claude-mistakes-kit/scripts/review_bundle.py weekly "$PWD"
 python3 ~/.claude/skills/claude-mistakes-kit/scripts/review_bundle.py monthly "$PWD"
 ```
-כל פקודה מייצרת קובץ חדש ב-`.claude/lessons/`, עם תאריך ושעה בשם, ולא דורסת קובץ קודם. המשתמש מדביק אותו בצ'אט חדש של מודל מחברה אחרת, כמו ChatGPT או Gemini. בודק שלא כתב את הרשומות רואה מה שהכותב מפספס.
+כל פקודה מייצרת קובץ חדש ב-`lessons/`, עם תאריך ושעה בשם, ולא דורסת קובץ קודם. המשתמש מדביק אותו בצ'אט חדש של מודל מחברה אחרת, כמו ChatGPT או Gemini. בודק שלא כתב את הרשומות רואה מה שהכותב מפספס.
 - שבועי: סיבת שורש לכל רשומה, חזרות, האם הפתרון באמת מונע, ובדיקה מכנית אחת להוסיף.
 - חודשי: לכל כלל, האם הטעות חזרה אחרי שהוא נוסף.
 את מה שהבודק מציע מביאים למשתמש לאישור. לא מוסיפים כלל לבד.

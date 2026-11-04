@@ -5,7 +5,7 @@ import sys, json, re, os, datetime, hashlib
 
 
 def lessons_dir(data):
-    return os.path.join(os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd(), ".claude", "lessons")
+    return os.path.join(os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd(), "lessons")
 
 
 def mistakes_sig(base):
@@ -32,7 +32,7 @@ if "--stop" in sys.argv[1:]:
         os.remove(pending)
         sys.exit(0)
     print(json.dumps({"decision": "block", "reason":
-        "[טיפול בטעויות] בהודעה האחרונה נרשם תיקון, ו-.claude/lessons/MISTAKES.md לא השתנה. "
+        "[טיפול בטעויות] בהודעה האחרונה נרשם תיקון, ו-lessons/MISTAKES.md לא השתנה. "
         "לפני שאתה מסיים, תוסיף שם רשומה לפי הפורמט שבקובץ, עם מוסר השכל ומה שונה בפועל. "
         "אם לדעתך לא טעית, תוסיף רשומה שמסבירה למה, עם ציטוט."}, ensure_ascii=False))
     sys.exit(0)
@@ -63,7 +63,7 @@ with open(os.path.join(base, "candidates.jsonl"), "a", encoding="utf8") as f:
 
 print("[טיפול בטעויות] בהודעה הזו יש תיקון. לפני שאתה עונה:")
 print("1. תכתוב איזה כלל נשבר.")
-print("2. תבדוק ב-.claude/lessons/MISTAKES.md אם טעות כזו כבר הופיעה.")
+print("2. תבדוק ב-lessons/MISTAKES.md אם טעות כזו כבר הופיעה.")
 print("3. תוסיף רשומה לפי הפורמט שבקובץ, עם מוסר השכל ומה שונה בפועל.")
 print("4. אם לדעתך לא טעית, תכתוב למה, עם ציטוט. אל תסכים רק כדי לרצות.")
 rules = os.path.join(base, "LESSONS_ACTIVE.md")

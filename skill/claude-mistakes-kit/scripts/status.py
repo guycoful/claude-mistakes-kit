@@ -2,7 +2,7 @@
 """status.py [PROJECT_DIR] : מצב היומן. כמה רשומות, כמה חוזרות, רשומות לא גמורות, ותיקונים שנתפסו בלי רשומה."""
 import json, os, re, sys
 P = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.getcwd())
-L = os.path.join(P, '.claude', 'lessons')
+L = os.path.join(P, 'lessons')
 m = open(os.path.join(L, 'MISTAKES.md'), encoding='utf-8').read()
 body = m.split('## רשומות', 1)[1] if '## רשומות' in m else ''
 entries = [b.strip() for b in re.split(r'\n(?=\d{1,2}[./]\d{1,2}[./]\d{2,4}\s*\|)', '\n' + body) if b.strip()]
