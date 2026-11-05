@@ -31,7 +31,7 @@ def copy(rel, dst_rel=None):
 HOOK_SRC = open(os.path.join(A, '.claude', 'hooks', 'capture_correction.py'), encoding='utf-8').read()
 def same(path): return os.path.exists(path) and open(path, encoding='utf-8').read() == HOOK_SRC
 # sha256 של כל הגרסאות הקודמות של ה-hook של הערכה. רק קובץ שזהה בדיוק לאחת מהן מוחלף. hook זר או ערוך לא נוגעים בו.
-OLD_HOOKS = {'09fb4405ce812c52f0490a5aee1a178f84c7836e203e4ed66b391a10924e4a6c', '2cf462e251861093d56d8546a0794825c98fecd6f1d4005ed5de722dc1040903', '5e080b934a377ec9b29e2b4e2cfd59d17c4f3f3704bd068ebfbb8df7bb5c8952', '5e80e48e0349febbe09b47605a44a73cd79319d85d67d724af5eb3ad84231680', 'c6c347f10b0e3df249693e68ce5fa619a4a2686e26d3e23d113311a7ded8a4ce'}
+OLD_HOOKS = {'d440602a6d48932cde4d6b987b746084d8c2ecc6fa16527a54cb39af8392fa6d', '09fb4405ce812c52f0490a5aee1a178f84c7836e203e4ed66b391a10924e4a6c', '2cf462e251861093d56d8546a0794825c98fecd6f1d4005ed5de722dc1040903', '5e080b934a377ec9b29e2b4e2cfd59d17c4f3f3704bd068ebfbb8df7bb5c8952', '5e80e48e0349febbe09b47605a44a73cd79319d85d67d724af5eb3ad84231680', 'c6c347f10b0e3df249693e68ce5fa619a4a2686e26d3e23d113311a7ded8a4ce'}
 def old_kit(path):
     if not os.path.exists(path): return False
     import hashlib
@@ -88,13 +88,15 @@ if any(r in OLD_RULES for r in cur.get('permissions', {}).get('allow', [])):
     cur['permissions']['allow'] = [r for r in cur['permissions']['allow'] if r not in OLD_RULES]; done.append('הוסרו הרשאות Edit של הגרסה הקודמת')
     if not cur['permissions']['allow']: del cur['permissions']['allow']
     if not cur['permissions']: del cur['permissions']
+# כל hook נבדק לבד, כדי ששדרוג יוסיף hook חדש גם כשהקבוצה שלו כבר קיימת
 for event, groups in new['hooks'].items():
     have = {h.get('command') for grp in hooks.get(event, []) for h in grp.get('hooks', [])}
     for g in groups:
         g = json.loads(json.dumps(g).replace('capture_correction.py', os.path.basename(HOOK_REL)))
-        cmd = g['hooks'][0]['command']
-        if cmd in have: done.append(f'hook קיים: {event}'); continue
-        hooks.setdefault(event, []).append(g); done.append(f'נוסף hook: {event}')
+        for h in g['hooks']:
+            label = event + (' (סיווג לפי הקשר)' if '--classify' in h['command'] else '')
+            if h['command'] in have: done.append(f'hook קיים: {label}'); continue
+            hooks.setdefault(event, []).append(dict(g, hooks=[h])); have.add(h['command']); done.append(f'נוסף hook: {label}')
 if json.dumps(cur, sort_keys=True) != before:
     if os.path.exists(sp): done.append(f'גיבוי של settings.json: {os.path.basename(backup(sp))}')
     os.makedirs(os.path.dirname(sp), exist_ok=True)
@@ -125,11 +127,20 @@ s1 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output
 m = re.search(r'#mk-[0-9a-f]+', r1.stdout)
 open(os.path.join(tmp, 'lessons', 'MISTAKES.md'), 'w', encoding='utf-8').write(f'## רשומות\n- בדיקה | {m.group(0) if m else "-"}\nמוסר השכל: בדיקה\nהפתרון שיושם: בדיקה\n')
 s2 = subprocess.run([sys.executable, hook, '--stop'], input='{}', capture_output=True, text=True, env=env)
-ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1 and '"block"' in s1.stdout and s2.stdout == ''
+# הסיווג לפי הקשר: מריצים עם מסווג מדומה שעונה YES, בלי קריאה למודל
+tr = os.path.join(tmp, 'transcript.jsonl')
+open(tr, 'w', encoding='utf-8').write(json.dumps({"type": "assistant", "message": {"content": [{"type": "text", "text": "שמרתי סיכום של המדריך."}]}}, ensure_ascii=False) + '\n')
+fake = os.path.join(tmp, 'fake_classifier.sh')
+open(fake, 'w', encoding='utf-8').write('#!/bin/sh\ncat >/dev/null\necho "YES: לא לזה התכוונתי"\n')
+envc = dict(env, MK_CLASSIFY_CMD='sh ' + fake)
+c1 = subprocess.run([sys.executable, hook, '--classify'], input=json.dumps({"prompt": "לא לזה התכוונתי, רציתי את המקור", "transcript_path": tr, "session_id": "mkcheck"}), capture_output=True, text=True, env=envc)
+c0 = subprocess.run([sys.executable, hook, '--classify'], input=json.dumps({"prompt": "טעית, כבר אמרתי", "transcript_path": tr, "session_id": "mkcheck"}), capture_output=True, text=True, env=envc)
+cls_ok = '#mk-' in c1.stdout and 'additionalContext' in c1.stdout and c0.stdout == ''
+ok = r1.stdout.startswith('[טיפול בטעויות]') and r0.stdout == '' and n == 1 and '"block"' in s1.stdout and s2.stdout == '' and cls_ok
 shutil.rmtree(tmp, ignore_errors=True)
 print('\n'.join(done))
 print('בקרה 1:', 'עברה' if ok else 'נכשלה')
 if not ok:
     print('ה-hook של הערכה לא הגיב כמצופה. פלט:')
-    print((r1.stdout + r1.stderr + r0.stdout + r0.stderr + s1.stdout + s1.stderr + s2.stdout + s2.stderr).strip() or '(ריק)'); sys.exit(1)
+    print((r1.stdout + r1.stderr + r0.stdout + r0.stderr + s1.stdout + s1.stderr + s2.stdout + s2.stderr + c1.stdout + c1.stderr + c0.stdout).strip() or '(ריק)'); sys.exit(1)
 print('עכשיו לפתוח סשן חדש של Claude Code ולהריץ /hooks (בקרה 2).')
